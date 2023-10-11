@@ -1,11 +1,9 @@
 // NeuralSteel.cpp : Defines the entry point for the application.
 //
-#include "TabControl.h"
-#include <gdiplus.h>
 #include "framework.h"
+#include "TabControl.h"
 #include "NeuralSteel.h"
 #pragma comment(lib, "gdiplus.lib")
-#include <random>
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
@@ -19,6 +17,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 HWND hLoadingWnd = NULL;
 HWND hMainWindow;
 TabControl* pTabControl = nullptr;
+CameraManager* camera = nullptr;
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -158,7 +157,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
     pTabControl = new TabControl(hMainWindow, hInstance);
-    pTabControl->AddTab(L"Tab 1");
+    pTabControl->AddTab(L"Tab 1", true);
     pTabControl->AddTab(L"Tab 2");
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_NEURALSTEEL));
@@ -241,6 +240,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+    case WM_USER + 1: {
+        cv::Mat frameToShow = camera->GetLatestFrame();;
+        if (pTabControl) {
+            pTabControl->UpdateCameraFeed(frameToShow);
+        }
+    }
+
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
@@ -250,7 +256,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_DESTROY:
+        camera->stop();
+        delete camera;
+        camera = nullptr;
         PostQuitMessage(0);
+        break;
+    case WM_CREATE:
+        camera = new CameraManager(hWnd);
+        camera->start();
         break;
     case WM_NOTIFY:
     {
