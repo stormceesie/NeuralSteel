@@ -13,7 +13,7 @@ private:
 	std::thread feedThread;
 	HWND hMainWindow;
 	std::mutex frameMutex;
-	cv::Mat latestFrame;
+	cv::Mat* frame;
 	bool running;
 
 	void CaptureFeed();

@@ -26,6 +26,7 @@ void TabControl::AddTab(LPCWSTR title, bool showCamera) {
 	int tabIndex = TabCtrl_InsertItem(hTab, tabPages.size(), &tie);
 
 	if (showCamera) {
+		isCameraTabSelected = true;
 		RECT tabRect;
 		TabCtrl_GetItemRect(hTab, tabIndex, &tabRect);
 		hCameraFeed = CreateWindow(L"STATIC", nullptr, WS_CHILD | WS_VISIBLE,
@@ -46,10 +47,6 @@ HWND TabControl::GetTab(int index) {
 }
 
 void TabControl::UpdateCameraFeed(const cv::Mat& frame) {
-	if (frame.empty() || !hCameraFeed) {
-		return;
-	}
-
 	// Initialiseer de BITMAPINFO structuur hier dynamisch
 	BITMAPINFO bmi = { 0 };
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -67,7 +64,7 @@ void TabControl::UpdateCameraFeed(const cv::Mat& frame) {
 	}
 
 	cv::Mat tmp;
-	cvtColor(frame, tmp, cv::COLOR_BGR2RGB);
+	cvtColor(frame, tmp, cv::COLOR_BGR2RGB); // Convert opencv Mat to RGB
 	SetDIBits(hdcCameraFeed, hBitmap, 0, tmp.rows, tmp.data, &bmi, DIB_RGB_COLORS);
 
 	HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
@@ -82,9 +79,19 @@ void TabControl::SelectTab(int index) {
 		for (int i = 0; i < tabPages.size(); ++i) {
 			if (i == index) {
 				ShowWindow(tabPages[i], SW_SHOW);
+
+				// Als de geselecteerde tab de camera-tab is, toon dan de camera feed
+				if (isCameraTabSelected && hCameraFeed) {
+					ShowWindow(hCameraFeed, SW_SHOW);
+				}
 			}
 			else {
 				ShowWindow(tabPages[i], SW_HIDE);
+
+				// Als de huidige tab niet de camera-tab is, verberg dan de camera feed
+				if (isCameraTabSelected && hCameraFeed) {
+					ShowWindow(hCameraFeed, SW_HIDE);
+				}
 			}
 		}
 	}

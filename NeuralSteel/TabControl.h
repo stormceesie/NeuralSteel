@@ -26,4 +26,5 @@ private:
 	HDC hMemDC;
 	HDC hdcCameraFeed;
 	std::vector<HWND> tabPages;
+	bool isCameraTabSelected = false;
 };

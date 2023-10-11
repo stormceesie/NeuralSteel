@@ -18,6 +18,8 @@ HWND hLoadingWnd = NULL;
 HWND hMainWindow;
 TabControl* pTabControl = nullptr;
 CameraManager* camera = nullptr;
+const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -70,8 +72,6 @@ void ShowLoadingScreen(HWND& hwnd, HINSTANCE hInstance) {
 
     // Create a loading screen based on the pixeldense of the height of the user his screen.
     float imageAspectRatio = static_cast<float>(image.GetWidth()) / image.GetHeight();
-    const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     const int desiredHeight = static_cast<int>(screenWidth * 0.15); // 15% of the user his screen
     const int desiredWidth = static_cast<int>(desiredHeight * imageAspectRatio);
 
@@ -104,17 +104,20 @@ void ShowLoadingScreen(HWND& hwnd, HINSTANCE hInstance) {
 
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
-
-    // Temporary to test if the image is realy shown
-    Sleep(5000);
 }
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     hInst = hInstance; // Store instance handle in our global variable
 
+    const int windowHeight = static_cast<int>(screenHeight * 0.50);
+    const int windowWidth = static_cast<int>(windowHeight * (16.0 / 9.0)); // acoording to standard 16/9
+
+    const int xPos = (screenWidth - windowWidth) / 2;
+    const int yPos = (screenHeight - windowHeight) / 2;
+
     HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 0, 800, 400, nullptr, nullptr, hInstance, nullptr);
+        xPos, yPos, windowWidth, windowHeight, nullptr, nullptr, hInstance, nullptr);
 
     if (!hWnd)
     {
@@ -209,7 +212,6 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return RegisterClassExW(&wcex);
 }
 
-//
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
 //  PURPOSE: Processes messages for the main window.
@@ -241,9 +243,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_USER + 1: {
-        cv::Mat frameToShow = camera->GetLatestFrame();;
         if (pTabControl) {
-            pTabControl->UpdateCameraFeed(frameToShow);
+            pTabControl->UpdateCameraFeed(camera->GetLatestFrame());
         }
     }
 
