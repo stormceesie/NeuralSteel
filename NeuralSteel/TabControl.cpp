@@ -1,9 +1,11 @@
 #include "TabControl.h"
 
 TabControl::TabControl(HWND parentWnd, HINSTANCE hInst) {
+	int tabHeight = static_cast<int>(GetSystemMetrics(SM_CYSCREEN) * 0.8);
+	int tabWidth = (16 * tabHeight) / 9;
 	hInstance = hInst;
 	hMemDC = CreateCompatibleDC(GetDC(hCameraFeed));  // Direct gebruik van GetDC() hier
-	hTab = CreateWindow(WC_TABCONTROL, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | TCS_FLATBUTTONS, 0, 0, 800, 600, parentWnd, nullptr, hInstance, nullptr);
+	hTab = CreateWindow(WC_TABCONTROL, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | TCS_FLATBUTTONS, 0, 0, tabWidth, tabHeight, parentWnd, nullptr, hInstance, nullptr);
 	SetBkColor(GetDC(hTab), RGB(150, 0, 0));
 	ShowWindow(hTab, SW_SHOW);
 	UpdateWindow(hTab);
@@ -26,6 +28,7 @@ void TabControl::AddTab(LPCWSTR title, bool showCamera) {
 	int tabIndex = TabCtrl_InsertItem(hTab, tabPages.size(), &tie);
 
 	if (showCamera) {
+		cameraTabIndex = tabIndex;
 		isCameraTabSelected = true;
 		RECT tabRect;
 		TabCtrl_GetItemRect(hTab, tabIndex, &tabRect);
@@ -47,9 +50,24 @@ HWND TabControl::GetTab(int index) {
 }
 
 void TabControl::UpdateCameraFeed(const cv::Mat& frame) {
-	// Controleer of hBitmap bestaat en of de afmetingen correct zijn, zo niet, maak een nieuwe
+	RECT tabRect;
+	GetClientRect(hTab, &tabRect);
+
+	// Bepaal de marges gebaseerd op de gegeven percentages
+	int topMargin = static_cast<int>((tabRect.bottom - tabRect.top) * 0.05);
+	int otherMargin = static_cast<int>((tabRect.bottom - tabRect.top) * 0.02);
+
+	float aspectRatio = static_cast<float>(frame.cols) / frame.rows;
+
+	// Bepaal de doelgrootte en positie
+	int targetHeight = tabRect.bottom - tabRect.top - topMargin - otherMargin;
+	int targetWidth = static_cast<int>(targetHeight * aspectRatio);
+
+	int leftMargin = (tabRect.right - targetWidth) / 2; // Centreer het beeld horizontaal
+
+	SetWindowPos(hCameraFeed, NULL, leftMargin, topMargin, targetWidth, targetHeight, SWP_NOZORDER);
+
 	if (!hBitmap || bmi.bmiHeader.biWidth != frame.cols || abs(bmi.bmiHeader.biHeight) != frame.rows) {
-		// Initialiseer de BITMAPINFO structuur hier dynamisch
 		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 		bmi.bmiHeader.biWidth = frame.cols;
 		bmi.bmiHeader.biHeight = -frame.rows;  // Negatieve waarde voor top-down bitmap
@@ -58,45 +76,42 @@ void TabControl::UpdateCameraFeed(const cv::Mat& frame) {
 		if (hBitmap) {
 			DeleteObject(hBitmap);
 		}
-		hBitmap = CreateCompatibleBitmap(hdcCameraFeed, bmi.bmiHeader.biWidth, abs(bmi.bmiHeader.biHeight));
+		hBitmap = CreateCompatibleBitmap(hdcCameraFeed, frame.cols, frame.rows);
 	}
 
 	SetDIBits(hdcCameraFeed, hBitmap, 0, frame.rows, frame.data, &bmi, DIB_RGB_COLORS);
 
 	HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
-	BitBlt(hdcCameraFeed, 0, 0, frame.cols, frame.rows, hMemDC, 0, 0, SRCCOPY);
+
+	// Gebruik StretchBlt om het gehele beeld te schalen naar het doelgebied
+	StretchBlt(hdcCameraFeed, 0, 0, targetWidth, targetHeight, hMemDC, 0, 0, frame.cols, frame.rows, SRCCOPY);
+
 	SelectObject(hMemDC, hOldBitmap);
-}
-
-void TabControl::SelectTab(int index) {
-	if (index >= 0 && index < tabPages.size()) {
-		TabCtrl_SetCurSel(hTab, index);
-
-		for (int i = 0; i < tabPages.size(); ++i) {
-			if (i == index) {
-				ShowWindow(tabPages[i], SW_SHOW);
-
-				// Als de geselecteerde tab de camera-tab is, toon dan de camera feed
-				if (isCameraTabSelected && hCameraFeed) {
-					ShowWindow(hCameraFeed, SW_SHOW);
-				}
-			}
-			else {
-				ShowWindow(tabPages[i], SW_HIDE);
-
-				// Als de huidige tab niet de camera-tab is, verberg dan de camera feed
-				if (isCameraTabSelected && hCameraFeed) {
-					ShowWindow(hCameraFeed, SW_HIDE);
-				}
-			}
-		}
-	}
-}
-
-void TabControl::HandleTabChange() {
-	int iPage = TabCtrl_GetCurSel(hTab);
 }
 
 HWND TabControl::GetHandle() const {
 	return hTab;
+}
+
+bool TabControl::GetCameraTabSelected() {
+	return isCameraTabSelected;
+}
+
+void TabControl::HandleTabChange() {
+	int iPage = TabCtrl_GetCurSel(hTab);
+
+	// Verberg de huidige camerafeed
+	if (hCameraFeed) {
+		ShowWindow(hCameraFeed, SW_HIDE);
+	}
+
+	if (iPage == cameraTabIndex) {
+		isCameraTabSelected = true;
+		if (hCameraFeed) {
+			ShowWindow(hCameraFeed, SW_SHOW);
+		}
+	}
+	else {
+		isCameraTabSelected = false;
+	}
 }

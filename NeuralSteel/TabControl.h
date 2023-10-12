@@ -15,10 +15,10 @@ public:
 
 	void AddTab(LPCWSTR title, bool showCamera = false);
 	HWND GetTab(int index);
-	void SelectTab(int index);
 	void HandleTabChange();
 	HWND GetHandle() const;
 	void UpdateCameraFeed(const cv::Mat& frame);
+	bool GetCameraTabSelected();
 
 private:
 	HWND hTab;
@@ -29,5 +29,6 @@ private:
 	HDC hMemDC;
 	HDC hdcCameraFeed;
 	std::vector<HWND> tabPages;
-	bool isCameraTabSelected = false;
+	bool isCameraTabSelected = true;
+	int cameraTabIndex;
 };

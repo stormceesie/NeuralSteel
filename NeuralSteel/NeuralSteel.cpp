@@ -70,7 +70,7 @@ void ShowLoadingScreen(HWND& hwnd, HINSTANCE hInstance) {
 
     // Create a loading screen based on the pixeldense of the height of the user his screen.
     float imageAspectRatio = static_cast<float>(image.GetWidth()) / image.GetHeight();
-    const int desiredHeight = static_cast<int>(screenWidth * 0.15); // 15% of the user his screen
+    const int desiredHeight = static_cast<int>(screenHeight * 0.30); // 15% of the user his screen
     const int desiredWidth = static_cast<int>(desiredHeight * imageAspectRatio);
 
     // Create a loading window without any background
@@ -108,7 +108,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     hInst = hInstance; // Store instance handle in our global variable
 
-    const int windowHeight = static_cast<int>(screenHeight * 0.50);
+    const int windowHeight = static_cast<int>(screenHeight * 0.65);
     const int windowWidth = static_cast<int>(windowHeight * (16.0 / 9.0)); // acoording to standard 16/9
 
     const int xPos = (screenWidth - windowWidth) / 2;
@@ -242,7 +242,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_USER + 1: {
-        if (pTabControl) {
+        if (pTabControl && pTabControl->GetCameraTabSelected()) {
             pTabControl->UpdateCameraFeed(pCamera->GetLatestFrame());
         }
     }
@@ -276,8 +276,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         NMHDR* pNMHDR = reinterpret_cast<NMHDR*>(lParam);
         if (pNMHDR->hwndFrom == pTabControl->GetHandle() && pNMHDR->code == TCN_SELCHANGE)
         {
-            int iSelectedTab = TabCtrl_GetCurSel(pTabControl->GetHandle());
-            // Doe iets op basis van de geselecteerde tab (iSelectedTab).
+            pTabControl->HandleTabChange();
         }
     }
     break;
