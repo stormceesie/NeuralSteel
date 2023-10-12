@@ -5,6 +5,7 @@ void CameraManager::CaptureFeed() {
 	while (running) {
 		// Set new frame in frame pointer
 		cap >> *frame;
+		cv::cvtColor(*frame, *frame, cv::COLOR_BGR2RGB);
 
 		// Send message to front thread to process the image in the GUI
 		PostMessage(hMainWindow, WM_USER + 1, 0, 0);
@@ -16,7 +17,7 @@ void CameraManager::CaptureFeed() {
 
 // Constructor of CameraManager fps is set here
 CameraManager::CameraManager(HWND hwnd, int cameraID, int fps) : hMainWindow(hwnd), cap(cameraID), delay(1000 / fps), running(false) {
-	frame = new cv::Mat;
+	frame = new cv::Mat();
 	if (!cap.isOpened()) {
 		std::cerr << "Error: Camera could not be opened" << std::endl;
 		exit(1);

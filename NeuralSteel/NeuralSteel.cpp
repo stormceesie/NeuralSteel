@@ -17,7 +17,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 HWND hLoadingWnd = NULL;
 HWND hMainWindow;
 TabControl* pTabControl = nullptr;
-CameraManager* camera = nullptr;
+CameraManager* pCamera = nullptr;
 const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 
@@ -244,7 +244,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_USER + 1: {
         if (pTabControl) {
-            pTabControl->UpdateCameraFeed(camera->GetLatestFrame());
+            pTabControl->UpdateCameraFeed(pCamera->GetLatestFrame());
         }
     }
 
@@ -257,14 +257,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_DESTROY:
-        camera->stop();
-        delete camera;
-        camera = nullptr;
+        pCamera->stop();
+        delete pCamera;
+        pCamera = nullptr;
+        delete pTabControl;
+        pTabControl = nullptr;
         PostQuitMessage(0);
         break;
     case WM_CREATE:
-        camera = new CameraManager(hWnd);
-        camera->start();
+        pCamera = new CameraManager(hWnd);
+        pCamera->start();
         break;
     case WM_NOTIFY:
     {

@@ -9,12 +9,12 @@
 class CameraManager {
 private:
 	cv::VideoCapture cap;
-	int delay;
+	int delay = 100;
 	std::thread feedThread;
 	HWND hMainWindow;
 	std::mutex frameMutex;
-	cv::Mat* frame;
-	bool running;
+	cv::Mat* frame = nullptr;
+	bool running = false;
 
 	void CaptureFeed();
 public:

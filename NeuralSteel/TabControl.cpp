@@ -47,28 +47,24 @@ HWND TabControl::GetTab(int index) {
 }
 
 void TabControl::UpdateCameraFeed(const cv::Mat& frame) {
-	// Initialiseer de BITMAPINFO structuur hier dynamisch
-	BITMAPINFO bmi = { 0 };
-	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bmi.bmiHeader.biWidth = frame.cols;
-	bmi.bmiHeader.biHeight = -frame.rows;  // Negatieve waarde voor top-down bitmap
-	bmi.bmiHeader.biPlanes = 1;
-	bmi.bmiHeader.biBitCount = 24;
-
 	// Controleer of hBitmap bestaat en of de afmetingen correct zijn, zo niet, maak een nieuwe
 	if (!hBitmap || bmi.bmiHeader.biWidth != frame.cols || abs(bmi.bmiHeader.biHeight) != frame.rows) {
+		// Initialiseer de BITMAPINFO structuur hier dynamisch
+		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bmi.bmiHeader.biWidth = frame.cols;
+		bmi.bmiHeader.biHeight = -frame.rows;  // Negatieve waarde voor top-down bitmap
+		bmi.bmiHeader.biPlanes = 1;
+		bmi.bmiHeader.biBitCount = 24;
 		if (hBitmap) {
 			DeleteObject(hBitmap);
 		}
 		hBitmap = CreateCompatibleBitmap(hdcCameraFeed, bmi.bmiHeader.biWidth, abs(bmi.bmiHeader.biHeight));
 	}
 
-	cv::Mat tmp;
-	cvtColor(frame, tmp, cv::COLOR_BGR2RGB); // Convert opencv Mat to RGB
-	SetDIBits(hdcCameraFeed, hBitmap, 0, tmp.rows, tmp.data, &bmi, DIB_RGB_COLORS);
+	SetDIBits(hdcCameraFeed, hBitmap, 0, frame.rows, frame.data, &bmi, DIB_RGB_COLORS);
 
 	HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
-	BitBlt(hdcCameraFeed, 0, 0, tmp.cols, tmp.rows, hMemDC, 0, 0, SRCCOPY);
+	BitBlt(hdcCameraFeed, 0, 0, frame.cols, frame.rows, hMemDC, 0, 0, SRCCOPY);
 	SelectObject(hMemDC, hOldBitmap);
 }
 
