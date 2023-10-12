@@ -4,9 +4,7 @@
 #include "TabControl.h"
 #include "NeuralSteel.h"
 #pragma comment(lib, "gdiplus.lib")
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
-name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
-processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#pragma comment(lib, "dwmapi.lib")
 
 #define MAX_LOADSTRING 100
 
@@ -123,6 +121,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     {
         return FALSE;
     }
+
     hMainWindow = hWnd;
     ShowWindow(hWnd, SW_MAXIMIZE);
     UpdateWindow(hWnd);
@@ -252,7 +251,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
             EndPaint(hWnd, &ps);
         }
         break;
@@ -265,9 +263,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         break;
     case WM_CREATE:
+    {
+        // Windows 11 round window corners for better style.
+        DWM_WINDOW_CORNER_PREFERENCE preference = DWMWCP_ROUND;
+        DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &preference, sizeof(preference));
         pCamera = new CameraManager(hWnd);
         pCamera->start();
         break;
+    }
     case WM_NOTIFY:
     {
         NMHDR* pNMHDR = reinterpret_cast<NMHDR*>(lParam);

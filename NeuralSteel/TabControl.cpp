@@ -3,8 +3,8 @@
 TabControl::TabControl(HWND parentWnd, HINSTANCE hInst) {
 	hInstance = hInst;
 	hMemDC = CreateCompatibleDC(GetDC(hCameraFeed));  // Direct gebruik van GetDC() hier
-	hTab = CreateWindow(WC_TABCONTROL, L"", WS_CHILD | WS_VISIBLE, 0, 0, 800, 600, parentWnd, nullptr, hInstance, nullptr);
-	SetBkColor(GetDC(hTab), RGB(23, 23, 23));
+	hTab = CreateWindow(WC_TABCONTROL, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | TCS_FLATBUTTONS, 0, 0, 800, 600, parentWnd, nullptr, hInstance, nullptr);
+	SetBkColor(GetDC(hTab), RGB(150, 0, 0));
 	ShowWindow(hTab, SW_SHOW);
 	UpdateWindow(hTab);
 }
