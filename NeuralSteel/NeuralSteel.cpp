@@ -159,8 +159,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
     pTabControl = new TabControl(hMainWindow, hInstance);
-    pTabControl->AddTab(L"Tab 1", true);
-    pTabControl->AddTab(L"Tab 2");
+    pTabControl->AddTab(L"Camera", true);
+    pTabControl->AddTab(L"Results");
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_NEURALSTEEL));
 
