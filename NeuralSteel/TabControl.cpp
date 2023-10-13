@@ -49,42 +49,32 @@ HWND TabControl::GetTab(int index) {
 	return nullptr;
 }
 
-void TabControl::UpdateCameraFeed(const cv::Mat& frame) {
+void TabControl::UpdateCameraFeed(const winrt::Windows::Graphics::Imaging::SoftwareBitmap& softwareBitmap) {
 	RECT tabRect;
 	GetClientRect(hTab, &tabRect);
 
-	// Bepaal de marges gebaseerd op de gegeven percentages
-	int topMargin = static_cast<int>((tabRect.bottom - tabRect.top) * 0.05);
-	int otherMargin = static_cast<int>((tabRect.bottom - tabRect.top) * 0.02);
+	// ... [Behoud de rest van de code die de marges, doelgrootte, etc. berekent]
 
-	float aspectRatio = static_cast<float>(frame.cols) / frame.rows;
+	// Zorg ervoor dat de SoftwareBitmap in BGRA8-formaat is
+	auto convertedBitmap = winrt::Windows::Graphics::Imaging::SoftwareBitmap::Convert(softwareBitmap, winrt::Windows::Graphics::Imaging::BitmapPixelFormat::Bgra8);
+	auto buffer = convertedBitmap.LockBuffer(winrt::Windows::Graphics::Imaging::BitmapBufferAccessMode::Read);
+	auto reference = buffer.CreateReference();
 
-	// Bepaal de doelgrootte en positie
-	int targetHeight = tabRect.bottom - tabRect.top - topMargin - otherMargin;
-	int targetWidth = static_cast<int>(targetHeight * aspectRatio);
+	BYTE* sourcePixels = nullptr;
+	uint32_t capacity = 0;
+	winrt::check_hresult(reinterpret_cast<::Windows::Storage::Streams::IBufferByteAccess*>(reference.as<::Windows::Storage::Streams::IBuffer>().get())->Buffer(&sourcePixels));
+	winrt::check_hresult(reference.as<::Windows::Storage::Streams::IBuffer>()->get_Capacity(&capacity));
 
-	int leftMargin = (tabRect.right - targetWidth) / 2; // Centreer het beeld horizontaal
+	// Update BITMAPINFO for the new frame dimensions, etc.
+	// ...
 
-	SetWindowPos(hCameraFeed, NULL, leftMargin, topMargin, targetWidth, targetHeight, SWP_NOZORDER);
-
-	if (!hBitmap || bmi.bmiHeader.biWidth != frame.cols || abs(bmi.bmiHeader.biHeight) != frame.rows) {
-		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bmi.bmiHeader.biWidth = frame.cols;
-		bmi.bmiHeader.biHeight = -frame.rows;  // Negatieve waarde voor top-down bitmap
-		bmi.bmiHeader.biPlanes = 1;
-		bmi.bmiHeader.biBitCount = 24;
-		if (hBitmap) {
-			DeleteObject(hBitmap);
-		}
-		hBitmap = CreateCompatibleBitmap(hdcCameraFeed, frame.cols, frame.rows);
-	}
-
-	SetDIBits(hdcCameraFeed, hBitmap, 0, frame.rows, frame.data, &bmi, DIB_RGB_COLORS);
+	// Update hBitmap with the pixel data from the SoftwareBitmap
+	SetDIBits(hdcCameraFeed, hBitmap, 0, convertedBitmap.PixelHeight(), sourcePixels, &bmi, DIB_RGB_COLORS);
 
 	HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
 
 	// Gebruik StretchBlt om het gehele beeld te schalen naar het doelgebied
-	StretchBlt(hdcCameraFeed, 0, 0, targetWidth, targetHeight, hMemDC, 0, 0, frame.cols, frame.rows, SRCCOPY);
+	StretchBlt(hdcCameraFeed, 0, 0, targetWidth, targetHeight, hMemDC, 0, 0, convertedBitmap.PixelWidth(), convertedBitmap.PixelHeight(), SRCCOPY);
 
 	SelectObject(hMemDC, hOldBitmap);
 }

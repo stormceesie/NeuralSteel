@@ -17,7 +17,7 @@ public:
 	HWND GetTab(int index);
 	void HandleTabChange();
 	HWND GetHandle() const;
-	void UpdateCameraFeed(const cv::Mat& frame);
+	void UpdateCameraFeed(const winrt::Windows::Graphics::Imaging::SoftwareBitmap& softwareBitmap);
 	bool GetCameraTabSelected();
 
 private:

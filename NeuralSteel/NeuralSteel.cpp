@@ -32,7 +32,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     hInst = hInstance; // Store instance handle in our global variable
 
     const int windowHeight = static_cast<int>(screenHeight * 0.65);
-    const int windowWidth = static_cast<int>(windowHeight * (16.0 / 9.0)); // acoording to standard 16/9
+    const int windowWidth = static_cast<int>(windowHeight * (16.0 / 9.0)); // acoording to standard 16/9 windows
 
     const int xPos = (screenWidth - windowWidth) / 2;
     const int yPos = (screenHeight - windowHeight) / 2;
@@ -106,11 +106,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return (int) msg.wParam;
 }
 
-//
+
 //  FUNCTION: MyRegisterClass()
 //
 //  PURPOSE: Registers the window class.
-//
+
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
@@ -140,7 +140,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //  WM_PAINT    - Paint the main window
 //  WM_DESTROY  - post a quit message and return
 //
-//
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)

@@ -1,6 +1,8 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
+// Origin Microsoft Visual C++ generated include file.
 // Used by NeuralSteel.rc
+
+// Note that the space on the botum of this file needs to be there else the code has an unexpected end of file.
 
 #define IDS_APP_TITLE			103
 
@@ -12,7 +14,6 @@
 #define IDI_NEURALSTEEL			107
 #define IDI_SMALL				108
 #define IDC_NEURALSTEEL			109
-#define LOADING_IMAGE           110
 #define IDB_STARTPROCESS		101
 #define IDC_MYICON				2
 #ifndef IDC_STATIC
