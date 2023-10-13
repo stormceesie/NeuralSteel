@@ -159,6 +159,7 @@
   <ItemGroup>
     <ClInclude Include="CameraManager.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="LoadingScreen.h" />
     <ClInclude Include="NeuralSteel.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="TabControl.h" />
@@ -167,6 +168,7 @@
   <ItemGroup>
     <ClCompile Include="CameraManager.cpp" />
     <ClCompile Include="NeuralSteel.cpp" />
+    <ClCompile Include="LoadingScreen.cpp" />
     <ClCompile Include="TabControl.cpp" />
   </ItemGroup>
   <ItemGroup>
