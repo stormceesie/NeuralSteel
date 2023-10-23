@@ -38,3 +38,9 @@
 
 *.aps
 *.vs/
+
+*.p7s
+*.winmd
+*.nupkg
+*.pri
+**/packages/*

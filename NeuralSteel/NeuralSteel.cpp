@@ -1,10 +1,6 @@
-// NeuralSteel.cpp : Defines the entry point for the application.
-//
-#include "LoadingScreen.h"
-#include "TabControl.h"
+#include "pch.h"
+
 #include "NeuralSteel.h"
-#pragma comment(lib, "gdiplus.lib")
-#pragma comment(lib, "dwmapi.lib")
 
 #define MAX_LOADSTRING 100
 
@@ -13,8 +9,6 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 HWND hMainWindow;
-TabControl* pTabControl = nullptr;
-CameraManager* pCamera = nullptr;
 LoadingScreen loadingscreen;
 const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
@@ -68,40 +62,77 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
     icex.dwICC = ICC_TAB_CLASSES;
     InitCommonControlsEx(&icex);
-
-    loadingscreen.ShowLoadingScreen(hInstance);
-
-    // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_NEURALSTEEL, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
-
-    // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
-    }
-
-    pTabControl = new TabControl(hMainWindow, hInstance);
-    pTabControl->AddTab(L"Camera", true);
-    pTabControl->AddTab(L"Results");
-
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_NEURALSTEEL));
-
-    loadingscreen.DeleteLoadingScreen();
-
+    std::wofstream logFile("logfile.txt");
+    std::wstreambuf* originalCerrBuffer = std::wcerr.rdbuf();
+    std::wcerr.rdbuf(logFile.rdbuf());
     MSG msg;
+    try {
 
-    // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        loadingscreen.ShowLoadingScreen(hInstance);
+
+        // Initialize global strings
+        LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+        LoadStringW(hInstance, IDC_NEURALSTEEL, szWindowClass, MAX_LOADSTRING);
+        MyRegisterClass(hInstance);
+
+        // Perform application initialization:
+        if (!InitInstance(hInstance, nCmdShow))
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            return FALSE;
+        }
+
+        winrt::init_apartment(winrt::apartment_type::single_threaded);
+        winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource desktopSource;
+        auto interop = desktopSource.as<IDesktopWindowXamlSourceNative>();
+        HRESULT hr = interop->AttachToWindow(hMainWindow);
+        winrt::check_hresult(hr);
+        HWND hWndXamlIsland;
+        hr = interop->get_WindowHandle(&hWndXamlIsland);
+        winrt::check_hresult(hr);
+        SetFocus(hWndXamlIsland);
+
+        const auto newHeight = 300;
+        const auto newWidth = 300;
+        const auto margin = 5;
+        SetWindowPos(hWndXamlIsland, 0, margin, margin, newHeight - margin, newWidth - margin, SWP_SHOWWINDOW);
+
+        auto neuralSteelPage = winrt::make<NeuralSteelNamespace::NeuralSteelPage>();
+        desktopSource.Content(neuralSteelPage);
+
+        HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_NEURALSTEEL));
+
+        loadingscreen.DeleteLoadingScreen();
+
+        // Main message loop:
+        while (GetMessage(&msg, nullptr, 0, 0))
+        {
+            BOOL xamlSourceProcessedMessage = FALSE;
+            auto xamlSourceNative2 = desktopSource.as<IDesktopWindowXamlSourceNative2>();
+            hr = xamlSourceNative2->PreTranslateMessage(&msg, &xamlSourceProcessedMessage);
+            winrt::check_hresult(hr);
+            if (!xamlSourceProcessedMessage && !TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
         }
     }
-    delete pTabControl;
+    catch (const winrt::hresult_error& e) {
+        OSVERSIONINFO osvi;
+        ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+        osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+        std::wcerr << L"WinRT Error: " << e.message().c_str() << L" (HRESULT: " << e.to_abi() << L")" << std::endl;
+        std::wcerr << "Windows version: " << osvi.dwMajorVersion << "." << osvi.dwMinorVersion << std::endl;
+        std::wcerr << "Build number: " << osvi.dwBuildNumber << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::wcerr << L"Standard Exception: " << e.what() << std::endl;
+    }
+    catch (...) {
+        std::wcerr << L"Unknown exception cought." << std::endl;
+    }
+    std::wcerr.rdbuf(originalCerrBuffer);
+    logFile.close();
     Gdiplus::GdiplusShutdown(gdiplusToken);
     return (int) msg.wParam;
 }
@@ -162,11 +193,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_USER + 1: {
-        if (pTabControl && pTabControl->GetCameraTabSelected()) {
-            pTabControl->UpdateCameraFeed(pCamera->GetLatestFrame());
-        }
-    }
 
     case WM_PAINT:
         {
@@ -176,11 +202,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_DESTROY:
-        pCamera->stop();
-        delete pCamera;
-        pCamera = nullptr;
-        delete pTabControl;
-        pTabControl = nullptr;
         PostQuitMessage(0);
         break;
     case WM_CREATE:
@@ -188,17 +209,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         // Windows 11 round window corners for better style.
         DWM_WINDOW_CORNER_PREFERENCE preference = DWMWCP_ROUND;
         DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &preference, sizeof(preference));
-        pCamera = new CameraManager(hWnd);
-        pCamera->start();
         break;
-    }
-    case WM_NOTIFY:
-    {
-        NMHDR* pNMHDR = reinterpret_cast<NMHDR*>(lParam);
-        if (pNMHDR->hwndFrom == pTabControl->GetHandle() && pNMHDR->code == TCN_SELCHANGE)
-        {
-            pTabControl->HandleTabChange();
-        }
     }
     break;
     default:

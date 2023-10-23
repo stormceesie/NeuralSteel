@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "LoadingScreen.h"
 
 LoadingScreen::LoadingScreen() {
